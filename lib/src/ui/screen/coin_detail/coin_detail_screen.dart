@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/models/crypto_model.dart';
@@ -21,9 +22,25 @@ class _CoinDetailScreenState extends State<CoinDetailScreen> {
   String? _description;
   bool _isLoadingDescription = false;
 
+  late final NumberFormat _currencyFormat;
+  late final NumberFormat _compactCurrencyFormat;
+  late final NumberFormat _percentFormat;
+
   @override
   void initState() {
     super.initState();
+
+    // Formatadores (pt-BR, R$)
+    _currencyFormat = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+    );
+    _compactCurrencyFormat = NumberFormat.compactCurrency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+    );
+    _percentFormat = NumberFormat("+#,##0.00;-#,##0.00", "pt_BR");
+
     _loadDescription();
   }
 
@@ -35,7 +52,8 @@ class _CoinDetailScreenState extends State<CoinDetailScreen> {
     try {
       final cryptoProvider =
           Provider.of<CryptoProvider>(context, listen: false);
-      final desc = await cryptoProvider.api.fetchCoinDescription(widget.coin.id);
+      final desc =
+          await cryptoProvider.api.fetchCoinDescription(widget.coin.id);
       setState(() {
         _description = desc;
       });
@@ -58,6 +76,17 @@ class _CoinDetailScreenState extends State<CoinDetailScreen> {
     final isPositive = widget.coin.priceChange24h >= 0;
     final priceChangeColor =
         isPositive ? Colors.greenAccent : Colors.redAccent;
+
+    String formatCurrency(double? value, {bool compact = false}) {
+      if (value == null) return '--';
+      return compact
+          ? _compactCurrencyFormat.format(value)
+          : _currencyFormat.format(value);
+    }
+
+    String formatPercent(double value) {
+      return '${_percentFormat.format(value)}%';
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B1020),
@@ -141,10 +170,171 @@ class _CoinDetailScreenState extends State<CoinDetailScreen> {
 
               const SizedBox(height: 24),
 
-              // Card de preço
+              // Card de preço + variação
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151A2C),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Preço atual',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                formatCurrency(widget.coin.currentPrice),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              'Variação 24h',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isPositive
+                                      ? Icons.arrow_upward_rounded
+                                      : Icons.arrow_downward_rounded,
+                                  size: 18,
+                                  color: priceChangeColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  formatPercent(
+                                    widget.coin.priceChangePercentage24h,
+                                  ),
+                                  style: TextStyle(
+                                    color: priceChangeColor,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Variação absoluta: ${formatCurrency(widget.coin.priceChange24h)}',
+                        style: TextStyle(
+                          color: priceChangeColor.withOpacity(0.9),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Card com máxima / mínima 24h
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF151A2C),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Máx. 24h',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            formatCurrency(widget.coin.high24h),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF151A2C),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Mín. 24h',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            formatCurrency(widget.coin.low24h),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Card com market cap e volume
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
                   color: const Color(0xFF151A2C),
                   borderRadius: BorderRadius.circular(16),
@@ -156,7 +346,7 @@ class _CoinDetailScreenState extends State<CoinDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Preço atual',
+                            'Market Cap',
                             style: TextStyle(
                               color: Colors.white54,
                               fontSize: 13,
@@ -164,49 +354,45 @@ class _CoinDetailScreenState extends State<CoinDetailScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'R\$ ${widget.coin.currentPrice.toStringAsFixed(2)}',
+                            formatCurrency(
+                              widget.coin.marketCap,
+                              compact: true,
+                            ),
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 20,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'Variação 24h',
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 13,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Volume 24h',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 13,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isPositive
-                                  ? Icons.arrow_upward_rounded
-                                  : Icons.arrow_downward_rounded,
-                              size: 18,
-                              color: priceChangeColor,
+                          const SizedBox(height: 4),
+                          Text(
+                            formatCurrency(
+                              widget.coin.totalVolume,
+                              compact: true,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${widget.coin.priceChangePercentage24h.toStringAsFixed(2)}%',
-                              style: TextStyle(
-                                color: priceChangeColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

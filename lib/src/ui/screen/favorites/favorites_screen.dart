@@ -75,11 +75,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         symbol: fav.symbol,
                         currentPrice: fav.currentPrice,
                         priceChange24h: fav.priceChange24h,
-                        priceChangePercentage24h:
-                            fav.priceChangePercentage24h,
+                        priceChangePercentage24h: fav.priceChangePercentage24h,
                         imageUrl: fav.imageUrl,
+                        marketCap: null,
+                        totalVolume: null,
+                        high24h: null,
+                        low24h: null,
                       );
-
                       return CryptoListTile(
                         crypto: crypto,
                         isFavorite: true,

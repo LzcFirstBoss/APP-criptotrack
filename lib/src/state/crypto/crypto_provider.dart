@@ -20,10 +20,10 @@ class CryptoProvider extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-
+                                                    
     try {
       _cryptos = await api.fetchTopCryptos(
-        perPage: 50,
+        perPage: 51,
         vsCurrency: 'brl',
       );
     } catch (e) {
